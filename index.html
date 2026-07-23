@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kindle↔Audio">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#14171c">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='24' fill='%2314171c'/%3E%3Crect x='8' y='8' width='104' height='104' rx='18' fill='none' stroke='%238a9a5b' stroke-width='2'/%3E%3Ctext x='60' y='78' font-size='58' text-anchor='middle' fill='%238a9a5b' font-family='serif'%3E%E2%87%84%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='24' fill='%2314171c'/%3E%3Ctext x='60' y='78' font-size='58' text-anchor='middle' fill='%238a9a5b' font-family='serif'%3E%E2%87%84%3C/text%3E%3C/svg%3E">
+<title>Kindle ↔ Audiolibro</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Spectral:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap');
+
+  :root {
+    --ink: #e8e2d4;
+    --bg: #14171c;
+    --bg-panel: #1c2027;
+    --line: #3a4048;
+    --accent: #8a9a5b;
+    --accent-dim: #5f6b42;
+    --muted: #9aa0a8;
+    --muted-2: #6b7178;
+    --warn: #c97b5a;
+    --warn-bg: rgba(201,123,90,0.12);
+    --danger: #b5543f;
+  }
+
+  body.light {
+    --ink: #262420;
+    --bg: #ece7da;
+    --bg-panel: #ffffff;
+    --line: #d8d2c2;
+    --accent: #5f7233;
+    --accent-dim: #dfe6cd;
+    --muted: #6b6a63;
+    --muted-2: #8a8880;
+    --warn: #a8502e;
+    --warn-bg: rgba(168,80,46,0.10);
+    --danger: #a8502e;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse at top left, rgba(138,154,91,0.08), transparent 60%),
+      radial-gradient(ellipse at bottom right, rgba(138,154,91,0.05), transparent 60%);
+    color: var(--ink);
+    font-family: 'Spectral', serif;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+    padding-top: calc(24px + env(safe-area-inset-top));
+    transition: background 0.2s, color 0.2s;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.5;
+    background-image: radial-gradient(circle, rgba(138,154,91,0.35) 0.6px, transparent 0.6px);
+    background-size: 26px 26px;
+  }
+  body.light::before {
+    opacity: 0.35;
+    background-image: radial-gradient(circle, rgba(95,114,51,0.25) 0.6px, transparent 0.6px);
+  }
+
+  .card {
+    width: 100%;
+    max-width: 440px;
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 28px 24px;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  }
+  .card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    border-radius: 14px 14px 0 0;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+
+  .top-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 6px;
+  }
+  h1 { font-size: 21px; font-weight: 600; margin: 0 0 4px; color: var(--ink); }
+  .sub { font-size: 13px; color: var(--muted); margin: 0 0 24px; line-height: 1.5; }
+
+  .icon-btn {
+    background: var(--bg); border: 1px solid var(--line); color: var(--muted);
+    width: 34px; height: 34px; border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    transition: opacity 0.15s, background 0.15s;
+  }
+  .icon-btn:active { background: var(--accent-dim); }
+  .icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .icon-btn:disabled:active { background: var(--bg); }
+
+  .top-actions { display: flex; gap: 6px; }
+  .field { margin-bottom: 18px; }
+  label {
+    display: block; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+  }
+
+  input[type="text"] {
+    width: 100%; background: var(--bg); border: 1px solid var(--line); color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace; font-size: 15px; padding: 10px 11px;
+    border-radius: 8px; -webkit-appearance: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(138,154,91,0.22); }
+
+  select {
+    width: 100%; background: var(--bg); border: 1px solid var(--line); color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace; font-size: 14px; padding: 10px 11px;
+    border-radius: 8px; -webkit-appearance: none; appearance: none;
+  }
+
+  .profile-row { display: flex; gap: 8px; }
+  .profile-row select { flex: 1; }
+  .book-title-input { font-family: 'Spectral', serif; font-size: 16px; font-weight: 600; }
+
+  .duration-inputs, .time-inputs { display: flex; gap: 8px; }
+  .duration-inputs > div, .time-inputs > div { flex: 1; }
+  .duration-inputs span, .time-inputs span {
+    display: block; font-size: 9.5px; color: var(--muted-2); margin-top: 4px; text-align: center;
+  }
+
+  .quick-toggle {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent);
+    cursor: pointer; margin-top: 6px; display: inline-block; user-select: none;
+  }
+  .quick-input { margin-top: 8px; display: none; }
+  .quick-input.show { display: block; }
+
+  .warning {
+    margin-top: 8px; background: var(--warn-bg); border: 1px solid var(--warn); color: var(--warn);
+    font-size: 12px; padding: 8px 10px; border-radius: 6px; line-height: 1.4; display: none;
+  }
+  .warning.show { display: block; }
+
+  .result { margin-top: 24px; padding-top: 20px; border-top: 1px dashed var(--line); }
+  .result-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .result-value-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .timestamp, .page-result {
+    font-family: 'IBM Plex Mono', monospace; font-size: 38px; font-weight: 600; color: var(--ink);
+    letter-spacing: 0.02em; display: flex; align-items: baseline; gap: 2px; flex-wrap: wrap;
+  }
+  .timestamp .unit, .page-result .unit {
+    font-size: 12px; color: var(--accent); margin-right: 8px; font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .copy-btn {
+    background: var(--accent-dim); border: none; color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 8px 12px;
+    border-radius: 7px; cursor: pointer; letter-spacing: 0.03em; white-space: nowrap;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .copy-btn:active { transform: scale(0.96); }
+  .copy-btn.flash { background: var(--accent); color: #fff; }
+
+  .hint { margin-top: 14px; font-size: 12px; color: var(--muted-2); line-height: 1.5; }
+  .total-line {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--muted-2);
+    margin-top: 22px; text-align: center; line-height: 1.6;
+  }
+
+  .tabs {
+    display: flex; gap: 2px; margin-bottom: 24px; background: var(--bg);
+    border: 1px solid var(--line); border-radius: 9px; padding: 3px;
+  }
+  .tab {
+    flex: 1; text-align: center; padding: 10px 0; font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted);
+    cursor: pointer; border-radius: 7px; transition: background 0.15s, color 0.15s;
+    user-select: none; display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .tab svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .tab.active { background: var(--accent-dim); color: var(--ink); }
+
+  .panel { display: none; opacity: 0; transform: translateY(4px); transition: opacity 0.18s ease, transform 0.18s ease; }
+  .panel.active { display: block; }
+  .panel.show { opacity: 1; transform: translateY(0); }
+
+  details.ref-details {
+    border: 1px solid var(--line); border-radius: 9px; padding: 0; margin-bottom: 18px; background: var(--bg);
+  }
+  details.ref-details summary {
+    padding: 11px 13px; font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); cursor: pointer;
+    list-style: none; display: flex; justify-content: space-between; align-items: center;
+  }
+  details.ref-details summary::-webkit-details-marker { display: none; }
+  details.ref-details summary::after { content: "+"; font-size: 15px; color: var(--accent); }
+  details.ref-details[open] summary::after { content: "–"; }
+  .ref-body { padding: 0 13px 15px; }
+  .ref-point-block { margin-bottom: 16px; }
+  .ref-point-block:last-child { margin-bottom: 0; }
+  .ref-point-title {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 8px;
+  }
+
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 60;
+  }
+  .overlay.hidden { display: none; }
+  .modal-card {
+    background: var(--bg-panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 26px 22px; max-width: 380px; width: 100%; max-height: 80vh; overflow-y: auto;
+  }
+  .modal-card h2 { font-size: 17px; margin: 0 0 10px; }
+  .modal-card p { font-size: 13.5px; color: var(--muted); line-height: 1.55; margin: 0 0 18px; }
+  .modal-card button.primary-btn {
+    width: 100%; background: var(--accent-dim); color: var(--ink); border: none; padding: 12px;
+    border-radius: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer;
+  }
+  .modal-btn-row { display: flex; gap: 8px; }
+  .modal-btn-row button {
+    flex: 1; padding: 12px; border-radius: 8px; border: none; cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .modal-btn-row .btn-cancel { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+  .modal-btn-row .btn-danger { background: var(--danger); color: #fff; }
+
+  .faq-item { border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 12px; }
+  .faq-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .faq-q {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: var(--ink);
+    font-weight: 600; margin-bottom: 6px; letter-spacing: 0.01em;
+  }
+  .faq-a { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  /* ---------- Splash screen ---------- */
+  #splash {
+    position: fixed; inset: 0; z-index: 100; background: #14171c;
+    background-image:
+      radial-gradient(ellipse at top left, rgba(138,154,91,0.10), transparent 60%),
+      radial-gradient(ellipse at bottom right, rgba(138,154,91,0.07), transparent 60%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: opacity 0.5s ease; cursor: pointer;
+  }
+  #splash.fade-out { opacity: 0; pointer-events: none; }
+  #splash .splash-icon {
+    width: 56px; height: 56px; border: 1px solid #8a9a5b; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; color: #8a9a5b;
+    font-family: 'Spectral', serif; font-size: 26px; margin-bottom: 18px;
+    animation: splashPulse 1.8s ease-in-out infinite; transition: transform 0.15s ease;
+  }
+  #splash.tapped .splash-icon { transform: scale(0.88); }
+  @keyframes splashPulse { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+  #splash h2 {
+    color: #e8e2d4; font-family: 'Spectral', serif; font-size: 20px; font-weight: 600;
+    margin: 0 0 8px; text-align: center; padding: 0 30px;
+  }
+  #splash .splash-eyebrow {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.16em;
+    text-transform: uppercase; color: #6b7178; margin-bottom: 30px;
+  }
+  #splash .splash-tap-hint {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: #8a9a5b; opacity: 0;
+    transition: opacity 0.6s ease; animation: tapPulse 2s ease-in-out infinite;
+    animation-delay: 0.6s;
+  }
+  #splash .splash-tap-hint.visible { opacity: 0.85; }
+  @keyframes tapPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.95; } }
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="splash-icon">⇄</div>
+  <h2>Book-Audiobook Calculator</h2>
+  <div class="splash-eyebrow" id="splashEyebrow"></div>
+  <div class="splash-tap-hint" id="splashTapHint"></div>
+</div>
+
+<div class="overlay hidden" id="helpOverlay">
+  <div class="modal-card">
+    <h2 id="helpTitle"></h2>
+    <div id="faqList"></div>
+    <button class="primary-btn" id="helpDismiss" style="margin-top:18px;"></button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="confirmOverlay">
+  <div class="modal-card">
+    <h2 id="confirmTitle"></h2>
+    <p id="confirmText"></p>
+    <div class="modal-btn-row">
+      <button class="btn-cancel" id="confirmCancel"></button>
+      <button class="btn-danger" id="confirmDeleteBtn"></button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="infoOverlay">
+  <div class="modal-card">
+    <p id="infoText" style="margin-bottom:18px;"></p>
+    <button class="primary-btn" id="infoDismiss"></button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="top-row">
+    <div>
+      <div class="eyebrow" id="txtEyebrow"></div>
+      <h1 id="txtAppTitle"></h1>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" id="langBtn" title="lang">ES</button>
+      <button class="icon-btn" id="themeBtn" title="theme">☾</button>
+      <button class="icon-btn" id="helpBtn" title="help">?</button>
+    </div>
+  </div>
+  <p class="sub" id="txtSubtitle"></p>
+
+  <div class="field">
+    <label id="txtProfileLabel"></label>
+    <div class="profile-row">
+      <select id="profileSelect"></select>
+      <button class="icon-btn" id="newProfileBtn" title="new">+</button>
+      <button class="icon-btn" id="deleteProfileBtn" title="delete">🗑</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label id="txtBookTitleLabel"></label>
+    <input type="text" id="bookTitle" class="book-title-input" placeholder="">
+  </div>
+
+  <div class="field">
+    <label id="txtTotalPagesLabel"></label>
+    <div class="duration-inputs">
+      <div>
+        <input type="text" id="totalPages" inputmode="numeric" pattern="[0-9]*">
+        <span id="txtPagesUnit"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="field">
+    <label id="txtTotalDurationLabel"></label>
+    <div class="duration-inputs">
+      <div><input type="text" id="h" inputmode="numeric" pattern="[0-9]*"><span id="txtHoursUnit1"></span></div>
+      <div><input type="text" id="m" inputmode="numeric" pattern="[0-9]*"><span id="txtMinutesUnit1"></span></div>
+      <div><input type="text" id="s" inputmode="numeric" pattern="[0-9]*"><span id="txtSecondsUnit1"></span></div>
+    </div>
+    <span class="quick-toggle" id="quickToggle1"></span>
+    <div class="quick-input" id="quickInput1"><input type="text" id="quickDuration" placeholder="hh:mm:ss"></div>
+    <div class="warning" id="warnDuration"></div>
+  </div>
+
+  <details class="ref-details" id="refDetails">
+    <summary id="txtRefLabel"></summary>
+    <div class="ref-body">
+
+      <div class="ref-point-block">
+        <div class="ref-point-title" id="txtRefALabel"></div>
+        <div class="field" style="margin-bottom:12px;">
+          <input type="text" id="refPageA" inputmode="numeric" pattern="[0-9]*">
+          <span id="txtRefPageLabelA" style="display:block;font-size:9.5px;color:var(--muted-2);margin-top:4px;text-align:center;"></span>
+        </div>
+        <div class="time-inputs">
+          <div><input type="text" id="refHA" inputmode="numeric" pattern="[0-9]*"><span id="txtHoursUnit2A"></span></div>
+          <div><input type="text" id="refMA" inputmode="numeric" pattern="[0-9]*"><span id="txtMinutesUnit2A"></span></div>
+          <div><input type="text" id="refSA" inputmode="numeric" pattern="[0-9]*"><span id="txtSecondsUnit2A"></span></div>
+        </div>
+      </div>
+
+      <div class="ref-point-block">
+        <div class="ref-point-title" id="txtRefBLabel"></div>
+        <div class="field" style="margin-bottom:12px;">
+          <input type="text" id="refPageB" inputmode="numeric" pattern="[0-9]*">
+          <span id="txtRefPageLabelB" style="display:block;font-size:9.5px;color:var(--muted-2);margin-top:4px;text-align:center;"></span>
+        </div>
+        <div class="time-inputs">
+          <div><input type="text" id="refHB" inputmode="numeric" pattern="[0-9]*"><span id="txtHoursUnit2B"></span></div>
+          <div><input type="text" id="refMB" inputmode="numeric" pattern="[0-9]*"><span id="txtMinutesUnit2B"></span></div>
+          <div><input type="text" id="refSB" inputmode="numeric" pattern="[0-9]*"><span id="txtSecondsUnit2B"></span></div>
+        </div>
+      </div>
+
+      <div class="warning" id="warnRef"></div>
+    </div>
+  </details>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="p2a">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5c-1.5-1.2-3.6-1.5-6-1V17c2.4-.5 4.5-.2 6 1 1.5-1.2 3.6-1.5 6-1V4c-2.4-.5-4.5-.2-6 1Z"/><path d="M12 5v13"/></svg>
+      <span id="txtTabP2A"></span>
+    </div>
+    <div class="tab" data-tab="a2p">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="14" width="4" height="6" rx="1.5"/><rect x="17.5" y="14" width="4" height="6" rx="1.5"/></svg>
+      <span id="txtTabA2P"></span>
+    </div>
+  </div>
+
+  <div class="panel active" id="panel-p2a">
+    <div class="field">
+      <label id="txtCurrentPageLabel"></label>
+      <input type="text" id="page" inputmode="numeric" pattern="[0-9]*" style="font-size:20px;font-weight:600;">
+      <div class="warning" id="warnCurrentPage"></div>
+    </div>
+    <div class="result">
+      <div class="result-label"><span id="txtResultAudioLabel"></span></div>
+      <div class="result-value-row">
+        <div class="timestamp" id="output">
+          <span class="unit">h</span><span id="outH">00</span>
+          <span class="unit">m</span><span id="outM">00</span>
+          <span class="unit">s</span><span id="outS">00</span>
+        </div>
+        <button class="copy-btn" id="copyAudioBtn"></button>
+      </div>
+      <p class="hint" id="txtHintP2A"></p>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-a2p">
+    <div class="field">
+      <label id="txtCurrentAudioLabel"></label>
+      <div class="time-inputs">
+        <div><input type="text" id="ch" inputmode="numeric" pattern="[0-9]*"><span id="txtHoursUnit3"></span></div>
+        <div><input type="text" id="cm" inputmode="numeric" pattern="[0-9]*"><span id="txtMinutesUnit3"></span></div>
+        <div><input type="text" id="cs" inputmode="numeric" pattern="[0-9]*"><span id="txtSecondsUnit3"></span></div>
+      </div>
+      <div class="warning" id="warnCurrentTime"></div>
+    </div>
+    <div class="result">
+      <div class="result-label"><span id="txtResultPageLabel"></span></div>
+      <div class="result-value-row">
+        <div class="page-result"><span id="outPage">0</span><span class="unit" id="outPageOfText"></span></div>
+        <button class="copy-btn" id="copyPageBtn"></button>
+      </div>
+      <p class="hint" id="txtHintA2P"></p>
+    </div>
+  </div>
+
+  <div class="total-line" id="totalLine"></div>
+</div>
+
+<script>
+(function () {
+  const dict = {
+    es: {
+      eyebrow: "Senda entre formatos",
+      appTitle: "Kindle ↔ Audiolibro",
+      subtitle: "Configura los datos del libro una vez, y luego convierte en cualquier dirección.",
+      profileLabel: "Libro guardado",
+      bookTitleLabel: "Título del libro",
+      bookTitlePlaceholder: "p. ej. Las puertas de la Casa de la Muerte",
+      totalPagesLabel: "Páginas totales del libro",
+      pagesUnit: "páginas",
+      totalDurationLabel: "Duración total del audiolibro",
+      hoursUnit: "horas", minutesUnit: "minutos", secondsUnit: "segundos",
+      quickToggleShow: "escribir todo junto (hh:mm:ss)",
+      quickToggleHide: "usar campos separados",
+      refLabel: "Puntos de referencia (mejoran mucho la precisión)",
+      refALabel: "Punto A",
+      refBLabel: "Punto B (opcional, recomendado)",
+      refPageLabel: "página conocida",
+      tabP2A: "Página → Audio",
+      tabA2P: "Audio → Página",
+      currentPageLabel: "Página actual en el Kindle",
+      resultAudioLabel: "Salta el audio a",
+      hintP2A: "Estimación basada en tus puntos de referencia (o lineal si no has puesto ninguno). Suele dejarte muy cerca — a partir de ahí, unos segundos de oído y ya está.",
+      currentAudioLabel: "Minuto actual del audiolibro",
+      resultPageLabel: "Deberías estar sobre la página",
+      hintA2P: "Misma estimación en sentido inverso: te da un número redondo de página, no exacto al párrafo.",
+      copy: "Copiar",
+      copied: "¡Copiado!",
+      warnRefPage: "Alguno de los puntos de referencia tiene una página mayor que el total del libro. Se ignorará hasta que lo corrijas.",
+      warnRefTime: "Alguno de los puntos de referencia tiene un tiempo mayor que la duración total. Se ignorará hasta que lo corrijas.",
+      warnRefSamePage: "Los puntos A y B tienen la misma página — no se puede calcular una pendiente con ellos. Cambia una de las dos páginas.",
+      warnCurrentPage: "Esa página es mayor que el total de páginas del libro.",
+      warnCurrentTime: "Ese tiempo es mayor que la duración total del audiolibro.",
+      warnDuration: "Revisa los minutos/segundos: deben estar entre 0 y 59.",
+      totalLinePrefix: "Duración total",
+      bookWord: "Libro",
+      pagesWord: "páginas",
+      offsetLabel: "Desfase inicial",
+      modelLabel: "Modelo",
+      modelLinear: "lineal simple",
+      modelOnePoint: "1 punto de referencia",
+      modelTwoPoints: "2 puntos de referencia",
+      helpTitle: "Preguntas frecuentes",
+      helpDismiss: "Entendido",
+      of: "de",
+      confirmDeleteTitle: "Eliminar libro",
+      confirmDeleteText: "¿Seguro que quieres eliminar este libro guardado? No se puede deshacer.",
+      confirmCancel: "Cancelar",
+      confirmDelete: "Eliminar",
+      cantDeleteLast: "No puedes eliminar el único libro guardado. Crea otro primero si quieres sustituirlo.",
+      infoDismiss: "Vale",
+      newBookDefaultTitle: "Libro sin título",
+      splashEyebrow: "sincroniza tu lectura",
+      splashTapHint: "toca para continuar",
+      faq: [
+        { q: "El Kindle me da un porcentaje, no una página. ¿Qué hago?",
+          a: "Multiplica el porcentaje por las páginas totales del libro. Por ejemplo, si vas al 42% de un libro de 1091 páginas: 0.42 × 1091 ≈ página 458. Escribe ese número en el campo de página." },
+        { q: "Mi audiolibro sí tiene capítulos separados, ¿me sirve esta app?",
+          a: "Si tu reproductor ya marca capítulos, mejor usa esos marcadores directamente — son exactos. Esta app está pensada sobre todo para audio de un solo archivo largo, sin cortes, donde no hay otra forma de ubicarte." },
+        { q: "¿Se guarda mi información en algún servidor?",
+          a: "No. Todo lo que escribes (libros, páginas, duraciones) se guarda solo en este dispositivo, en tu navegador. Nadie más lo ve." },
+        { q: "¿Qué tan exacto es el resultado?",
+          a: "Es una estimación, no un cálculo exacto al segundo. Con un punto de referencia mejora bastante; con dos, mucho más — pero siempre puede haber unos segundos o incluso un par de minutos de margen." },
+        { q: "¿Para qué sirve tener dos puntos de referencia en vez de uno?",
+          a: "Con un solo punto, la app asume que, a partir de ahí, el resto del libro se narra siempre al mismo ritmo constante hasta el final. Con dos puntos (idealmente uno cerca del principio y otro más avanzado), la app calcula el ritmo real de narración entre esos dos puntos exactos, en vez de suponerlo. Esto corrige pequeñas desviaciones que se van acumulando a lo largo del libro, así que cuanto más separados estén A y B, mejor suele quedar el cálculo." }
+      ]
+    },
+    en: {
+      eyebrow: "A path between formats",
+      appTitle: "Kindle ↔ Audiobook",
+      subtitle: "Set up the book's data once, then convert in either direction.",
+      profileLabel: "Saved book",
+      bookTitleLabel: "Book title",
+      bookTitlePlaceholder: "e.g. Deadhouse Gates",
+      totalPagesLabel: "Total pages in the book",
+      pagesUnit: "pages",
+      totalDurationLabel: "Total audiobook duration",
+      hoursUnit: "hours", minutesUnit: "minutes", secondsUnit: "seconds",
+      quickToggleShow: "type it all at once (hh:mm:ss)",
+      quickToggleHide: "use separate fields",
+      refLabel: "Reference points (greatly improve accuracy)",
+      refALabel: "Point A",
+      refBLabel: "Point B (optional, recommended)",
+      refPageLabel: "known page",
+      tabP2A: "Page → Audio",
+      tabA2P: "Audio → Page",
+      currentPageLabel: "Current Kindle page",
+      resultAudioLabel: "Jump the audio to",
+      hintP2A: "Estimate based on your reference points (or linear if you haven't set any). It usually gets you very close — from there, a few seconds of listening will do it.",
+      currentAudioLabel: "Current audiobook time",
+      resultPageLabel: "You should be around page",
+      hintA2P: "Same estimate in reverse: gives you a rounded page number, not exact to the paragraph.",
+      copy: "Copy",
+      copied: "Copied!",
+      warnRefPage: "One of the reference points has a page greater than the book's total. It will be ignored until you fix it.",
+      warnRefTime: "One of the reference points has a time greater than the total duration. It will be ignored until you fix it.",
+      warnRefSamePage: "Points A and B have the same page — a slope can't be calculated from them. Change one of the two pages.",
+      warnCurrentPage: "That page is greater than the book's total pages.",
+      warnCurrentTime: "That time is greater than the audiobook's total duration.",
+      warnDuration: "Check the minutes/seconds: they must be between 0 and 59.",
+      totalLinePrefix: "Total duration",
+      bookWord: "Book",
+      pagesWord: "pages",
+      offsetLabel: "Initial offset",
+      modelLabel: "Model",
+      modelLinear: "simple linear",
+      modelOnePoint: "1 reference point",
+      modelTwoPoints: "2 reference points",
+      helpTitle: "Frequently asked questions",
+      helpDismiss: "Got it",
+      of: "of",
+      confirmDeleteTitle: "Delete book",
+      confirmDeleteText: "Are you sure you want to delete this saved book? This can't be undone.",
+      confirmCancel: "Cancel",
+      confirmDelete: "Delete",
+      cantDeleteLast: "You can't delete your only saved book. Create another one first if you want to replace it.",
+      infoDismiss: "OK",
+      newBookDefaultTitle: "Untitled book",
+      splashEyebrow: "sync your reading",
+      splashTapHint: "tap to continue",
+      faq: [
+        { q: "My Kindle shows a percentage, not a page. What do I do?",
+          a: "Multiply the percentage by the book's total pages. For example, at 42% of a 1091-page book: 0.42 × 1091 ≈ page 458. Type that number into the page field." },
+        { q: "My audiobook does have separate chapters — is this app useful for me?",
+          a: "If your player already marks chapters, just use those markers directly — they're exact. This app is mainly meant for one long single-file audio recording with no chapter markers, where there's no other way to find your place." },
+        { q: "Is my information stored on any server?",
+          a: "No. Everything you type (books, pages, durations) is saved only on this device, in your browser. No one else sees it." },
+        { q: "How accurate is the result?",
+          a: "It's an estimate, not an exact-to-the-second calculation. One reference point improves it a lot; two improve it even more — but there can still be a margin of a few seconds or even a couple of minutes." },
+        { q: "What's the point of two reference points instead of one?",
+          a: "With a single point, the app assumes that from there on, the rest of the book is narrated at the same constant pace all the way to the end. With two points (ideally one near the start and one further in), the app calculates the actual narration pace between those two exact points instead of assuming it. This corrects small drift that builds up over the course of the book — the further apart A and B are, the better the estimate tends to be." }
+      ]
+    }
+  };
+
+  const STORAGE_KEY = 'kindleAudioSync_v2';
+  const memoryFallback = {};
+  const storage = {
+    get(key) { try { return localStorage.getItem(key); } catch (e) { return memoryFallback[key] ?? null; } },
+    set(key, val) { try { localStorage.setItem(key, val); } catch (e) { memoryFallback[key] = val; } }
+  };
+
+  function detectLang() {
+    const saved = storage.get('lang');
+    if (saved && dict[saved]) return saved;
+    const nav = (navigator.language || 'en').slice(0, 2).toLowerCase();
+    return dict[nav] ? nav : 'en';
+  }
+  let lang = detectLang();
+  function t(key) { return dict[lang][key] ?? dict.en[key] ?? key; }
+
+  function renderFaq() {
+    const list = document.getElementById('faqList');
+    list.innerHTML = '';
+    t('faq').forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'faq-item';
+      const q = document.createElement('div');
+      q.className = 'faq-q';
+      q.textContent = item.q;
+      const a = document.createElement('div');
+      a.className = 'faq-a';
+      a.textContent = item.a;
+      div.appendChild(q); div.appendChild(a);
+      list.appendChild(div);
+    });
+  }
+
+  function applyLang() {
+    document.documentElement.lang = lang;
+    document.title = t('appTitle');
+    document.getElementById('txtEyebrow').textContent = t('eyebrow');
+    document.getElementById('txtAppTitle').textContent = t('appTitle');
+    document.getElementById('txtSubtitle').textContent = t('subtitle');
+    document.getElementById('txtProfileLabel').textContent = t('profileLabel');
+    document.getElementById('txtBookTitleLabel').textContent = t('bookTitleLabel');
+    document.getElementById('bookTitle').placeholder = t('bookTitlePlaceholder');
+    document.getElementById('txtTotalPagesLabel').textContent = t('totalPagesLabel');
+    document.getElementById('txtPagesUnit').textContent = t('pagesUnit');
+    document.getElementById('txtTotalDurationLabel').textContent = t('totalDurationLabel');
+    document.getElementById('txtHoursUnit1').textContent = t('hoursUnit');
+    document.getElementById('txtMinutesUnit1').textContent = t('minutesUnit');
+    document.getElementById('txtSecondsUnit1').textContent = t('secondsUnit');
+    ['A','B'].forEach(suf => {
+      document.getElementById('txtHoursUnit2'+suf).textContent = t('hoursUnit');
+      document.getElementById('txtMinutesUnit2'+suf).textContent = t('minutesUnit');
+      document.getElementById('txtSecondsUnit2'+suf).textContent = t('secondsUnit');
+      document.getElementById('txtRefPageLabel'+suf).textContent = t('refPageLabel');
+    });
+    document.getElementById('txtHoursUnit3').textContent = t('hoursUnit');
+    document.getElementById('txtMinutesUnit3').textContent = t('minutesUnit');
+    document.getElementById('txtSecondsUnit3').textContent = t('secondsUnit');
+    document.getElementById('txtRefLabel').textContent = t('refLabel');
+    document.getElementById('txtRefALabel').textContent = t('refALabel');
+    document.getElementById('txtRefBLabel').textContent = t('refBLabel');
+    document.getElementById('txtTabP2A').textContent = t('tabP2A');
+    document.getElementById('txtTabA2P').textContent = t('tabA2P');
+    document.getElementById('txtCurrentPageLabel').textContent = t('currentPageLabel');
+    document.getElementById('txtResultAudioLabel').textContent = t('resultAudioLabel');
+    document.getElementById('txtHintP2A').textContent = t('hintP2A');
+    document.getElementById('txtCurrentAudioLabel').textContent = t('currentAudioLabel');
+    document.getElementById('txtResultPageLabel').textContent = t('resultPageLabel');
+    document.getElementById('txtHintA2P').textContent = t('hintA2P');
+    document.getElementById('copyAudioBtn').textContent = t('copy');
+    document.getElementById('copyPageBtn').textContent = t('copy');
+    document.getElementById('helpTitle').textContent = t('helpTitle');
+    document.getElementById('helpDismiss').textContent = t('helpDismiss');
+    document.getElementById('confirmTitle').textContent = t('confirmDeleteTitle');
+    document.getElementById('confirmText').textContent = t('confirmDeleteText');
+    document.getElementById('confirmCancel').textContent = t('confirmCancel');
+    document.getElementById('confirmDeleteBtn').textContent = t('confirmDelete');
+    document.getElementById('infoDismiss').textContent = t('infoDismiss');
+    document.getElementById('langBtn').textContent = lang.toUpperCase();
+    document.getElementById('splashEyebrow').textContent = t('splashEyebrow');
+    document.getElementById('splashTapHint').textContent = t('splashTapHint');
+    renderFaq();
+    quickToggle1.textContent = quickShown ? t('quickToggleHide') : t('quickToggleShow');
+    populateProfileSelect();
+    updateDeleteButtonState();
+    recalc();
+  }
+
+  // ---------- Elements ----------
+  const totalPagesInput = document.getElementById('totalPages');
+  const hInput = document.getElementById('h');
+  const mInput = document.getElementById('m');
+  const sInput = document.getElementById('s');
+  const totalLine = document.getElementById('totalLine');
+  const bookTitleInput = document.getElementById('bookTitle');
+
+  const refPageAInput = document.getElementById('refPageA');
+  const refHAInput = document.getElementById('refHA');
+  const refMAInput = document.getElementById('refMA');
+  const refSAInput = document.getElementById('refSA');
+  const refPageBInput = document.getElementById('refPageB');
+  const refHBInput = document.getElementById('refHB');
+  const refMBInput = document.getElementById('refMB');
+  const refSBInput = document.getElementById('refSB');
+
+  const pageInput = document.getElementById('page');
+  const outH = document.getElementById('outH');
+  const outM = document.getElementById('outM');
+  const outS = document.getElementById('outS');
+
+  const chInput = document.getElementById('ch');
+  const cmInput = document.getElementById('cm');
+  const csInput = document.getElementById('cs');
+  const outPage = document.getElementById('outPage');
+  const outPageOfText = document.getElementById('outPageOfText');
+
+  const warnDuration = document.getElementById('warnDuration');
+  const warnRef = document.getElementById('warnRef');
+  const warnCurrentPage = document.getElementById('warnCurrentPage');
+  const warnCurrentTime = document.getElementById('warnCurrentTime');
+
+  const quickToggle1 = document.getElementById('quickToggle1');
+  const quickInput1 = document.getElementById('quickInput1');
+  const quickDuration = document.getElementById('quickDuration');
+  let quickShown = false;
+
+  const profileSelect = document.getElementById('profileSelect');
+  const newProfileBtn = document.getElementById('newProfileBtn');
+  const deleteProfileBtn = document.getElementById('deleteProfileBtn');
+
+  const langBtn = document.getElementById('langBtn');
+  const themeBtn = document.getElementById('themeBtn');
+  const helpBtn = document.getElementById('helpBtn');
+  const helpOverlay = document.getElementById('helpOverlay');
+  const helpDismiss = document.getElementById('helpDismiss');
+
+  const confirmOverlay = document.getElementById('confirmOverlay');
+  const confirmCancel = document.getElementById('confirmCancel');
+  const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+  const infoOverlay = document.getElementById('infoOverlay');
+  const infoText = document.getElementById('infoText');
+  const infoDismiss = document.getElementById('infoDismiss');
+
+  const copyAudioBtn = document.getElementById('copyAudioBtn');
+  const copyPageBtn = document.getElementById('copyPageBtn');
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function attachSelectOnFocus(el) {
+    el.addEventListener('focus', function () { requestAnimationFrame(() => this.select()); });
+    el.addEventListener('input', function () {
+      const cleaned = this.value.replace(/[^0-9]/g, '');
+      if (cleaned !== this.value) this.value = cleaned;
+    });
+  }
+  ['totalPages','h','m','s','refPageA','refHA','refMA','refSA','refPageB','refHB','refMB','refSB','page','ch','cm','cs']
+    .forEach(id => attachSelectOnFocus(document.getElementById(id)));
+
+  // ---------- Profiles ----------
+  function loadState() {
+    try { const raw = storage.get(STORAGE_KEY); if (raw) return JSON.parse(raw); } catch (e) {}
+    return { profiles: [], activeId: null, theme: 'dark', lastTab: 'p2a' };
+  }
+  let state = loadState();
+  function saveState() { storage.set(STORAGE_KEY, JSON.stringify(state)); }
+
+  function defaultProfile() {
+    return {
+      id: 'p_' + Date.now() + Math.random().toString(36).slice(2, 6),
+      title: '', totalPages: 400, h: 10, m: 0, s: 0,
+      refPageA: 0, refHA: 0, refMA: 0, refSA: 0,
+      refPageB: 0, refHB: 0, refMB: 0, refSB: 0
+    };
+  }
+
+  function getActiveProfile() {
+    let p = state.profiles.find(p => p.id === state.activeId);
+    if (!p) {
+      if (state.profiles.length === 0) { p = defaultProfile(); state.profiles.push(p); }
+      else { p = state.profiles[0]; }
+      state.activeId = p.id;
+      saveState();
+    }
+    return p;
+  }
+
+  function populateProfileSelect() {
+    profileSelect.innerHTML = '';
+    state.profiles.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.title || t('newBookDefaultTitle');
+      if (p.id === state.activeId) opt.selected = true;
+      profileSelect.appendChild(opt);
+    });
+  }
+
+  function updateDeleteButtonState() {
+    const onlyOne = state.profiles.length <= 1;
+    deleteProfileBtn.disabled = onlyOne;
+  }
+
+  function fieldsFromProfile(p) {
+    bookTitleInput.value = p.title || '';
+    totalPagesInput.value = p.totalPages;
+    hInput.value = p.h; mInput.value = p.m; sInput.value = p.s;
+    refPageAInput.value = p.refPageA; refHAInput.value = p.refHA; refMAInput.value = p.refMA; refSAInput.value = p.refSA;
+    refPageBInput.value = p.refPageB; refHBInput.value = p.refHB; refMBInput.value = p.refMB; refSBInput.value = p.refSB;
+  }
+
+  function profileFromFields() {
+    const p = getActiveProfile();
+    p.title = bookTitleInput.value.trim();
+    p.totalPages = parseInt(totalPagesInput.value) || 1;
+    p.h = parseInt(hInput.value) || 0;
+    p.m = parseInt(mInput.value) || 0;
+    p.s = parseInt(sInput.value) || 0;
+    p.refPageA = parseInt(refPageAInput.value) || 0;
+    p.refHA = parseInt(refHAInput.value) || 0;
+    p.refMA = parseInt(refMAInput.value) || 0;
+    p.refSA = parseInt(refSAInput.value) || 0;
+    p.refPageB = parseInt(refPageBInput.value) || 0;
+    p.refHB = parseInt(refHBInput.value) || 0;
+    p.refMB = parseInt(refMBInput.value) || 0;
+    p.refSB = parseInt(refSBInput.value) || 0;
+    saveState();
+    populateProfileSelect();
+  }
+
+  profileSelect.addEventListener('change', () => {
+    state.activeId = profileSelect.value;
+    saveState();
+    fieldsFromProfile(getActiveProfile());
+    updateDeleteButtonState();
+    recalc();
+  });
+
+  newProfileBtn.addEventListener('click', () => {
+    const p = defaultProfile();
+    state.profiles.push(p);
+    state.activeId = p.id;
+    saveState();
+    populateProfileSelect();
+    updateDeleteButtonState();
+    fieldsFromProfile(p);
+    bookTitleInput.focus();
+    recalc();
+  });
+
+  function showInfo(msg) {
+    infoText.textContent = msg;
+    infoOverlay.classList.remove('hidden');
+  }
+  infoDismiss.addEventListener('click', () => infoOverlay.classList.add('hidden'));
+
+  deleteProfileBtn.addEventListener('click', () => {
+    if (deleteProfileBtn.disabled) return;
+    if (state.profiles.length <= 1) { showInfo(t('cantDeleteLast')); return; }
+    confirmOverlay.classList.remove('hidden');
+  });
+  confirmCancel.addEventListener('click', () => confirmOverlay.classList.add('hidden'));
+  confirmDeleteBtn.addEventListener('click', () => {
+    state.profiles = state.profiles.filter(p => p.id !== state.activeId);
+    state.activeId = state.profiles[0].id;
+    saveState();
+    populateProfileSelect();
+    updateDeleteButtonState();
+    fieldsFromProfile(getActiveProfile());
+    recalc();
+    confirmOverlay.classList.add('hidden');
+  });
+
+  // ---------- Theme ----------
+  function applyTheme() {
+    document.body.classList.toggle('light', state.theme === 'light');
+    themeBtn.textContent = state.theme === 'light' ? '☀' : '☾';
+  }
+  themeBtn.addEventListener('click', () => {
+    state.theme = state.theme === 'light' ? 'dark' : 'light';
+    saveState();
+    applyTheme();
+  });
+
+  // ---------- Language ----------
+  langBtn.addEventListener('click', () => {
+    lang = lang === 'es' ? 'en' : 'es';
+    storage.set('lang', lang);
+    applyLang();
+  });
+
+  // ---------- Help / FAQ overlay ----------
+  helpBtn.addEventListener('click', () => helpOverlay.classList.remove('hidden'));
+  helpDismiss.addEventListener('click', () => helpOverlay.classList.add('hidden'));
+
+  // ---------- Quick duration entry ----------
+  quickToggle1.addEventListener('click', () => {
+    quickShown = !quickShown;
+    quickInput1.classList.toggle('show', quickShown);
+    quickToggle1.textContent = quickShown ? t('quickToggleHide') : t('quickToggleShow');
+    if (quickShown) {
+      quickDuration.value = `${hInput.value}:${pad(mInput.value)}:${pad(sInput.value)}`;
+      quickDuration.focus();
+    }
+  });
+  quickDuration.addEventListener('input', () => {
+    const parts = quickDuration.value.split(':').map(x => parseInt(x));
+    if (parts.length === 3 && parts.every(n => !isNaN(n))) {
+      hInput.value = parts[0]; mInput.value = parts[1]; sInput.value = parts[2];
+      recalc(); profileFromFields();
+    }
+  });
+
+  // ---------- Tabs ----------
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      if (tab.classList.contains('active')) return;
+      document.querySelectorAll('.tab').forEach(t2 => t2.classList.remove('active'));
+      tab.classList.add('active');
+      const targetId = 'panel-' + tab.dataset.tab;
+      const current = document.querySelector('.panel.active');
+      const target = document.getElementById(targetId);
+      if (current && current !== target) {
+        current.classList.remove('show');
+        setTimeout(() => {
+          current.classList.remove('active');
+          target.classList.add('active');
+          requestAnimationFrame(() => target.classList.add('show'));
+        }, 140);
+      } else {
+        target.classList.add('active');
+        requestAnimationFrame(() => target.classList.add('show'));
+      }
+      state.lastTab = tab.dataset.tab;
+      saveState();
+    });
+  });
+
+  // ---------- Copy buttons ----------
+  function flashCopied(btn) {
+    btn.textContent = t('copied');
+    btn.classList.add('flash');
+    setTimeout(() => { btn.textContent = t('copy'); btn.classList.remove('flash'); }, 1000);
+  }
+  copyAudioBtn.addEventListener('click', () => {
+    const text = `${outH.textContent}:${outM.textContent}:${outS.textContent}`;
+    navigator.clipboard?.writeText(text).catch(() => {});
+    flashCopied(copyAudioBtn);
+  });
+  copyPageBtn.addEventListener('click', () => {
+    navigator.clipboard?.writeText(outPage.textContent).catch(() => {});
+    flashCopied(copyPageBtn);
+  });
+
+  // ---------- Core calculation ----------
+  function totalAudioSeconds() {
+    return (parseInt(hInput.value) || 0) * 3600 + (parseInt(mInput.value) || 0) * 60 + (parseInt(sInput.value) || 0);
+  }
+  function toSeconds(h, m, s) { return (parseInt(h)||0)*3600 + (parseInt(m)||0)*60 + (parseInt(s)||0); }
+
+  // Returns { a, b, modelUsed } where time(page) = a*page + b
+  function getModel(totalPages, totalSeconds) {
+    const pageA = parseInt(refPageAInput.value) || 0;
+    const secA = toSeconds(refHAInput.value, refMAInput.value, refSAInput.value);
+    const pageB = parseInt(refPageBInput.value) || 0;
+    const secB = toSeconds(refHBInput.value, refMBInput.value, refSBInput.value);
+
+    const providedA = pageA > 0 || secA > 0;
+    const providedB = pageB > 0 || secB > 0;
+
+    let refIssue = false;
+    if (providedA && (pageA > totalPages || (secA > totalSeconds && totalSeconds > 0))) refIssue = 'range';
+    if (providedB && (pageB > totalPages || (secB > totalSeconds && totalSeconds > 0))) refIssue = 'range';
+
+    const validA = providedA && pageA <= totalPages && (totalSeconds === 0 || secA <= totalSeconds);
+    const validB = providedB && pageB <= totalPages && (totalSeconds === 0 || secB <= totalSeconds);
+
+    if (validA && validB) {
+      if (pageA === pageB) {
+        return { a: totalSeconds / totalPages, b: 0, modelUsed: 'linear', refIssue: 'samePage' };
+      }
+      const a = (secB - secA) / (pageB - pageA);
+      const b = secA - a * pageA;
+      return { a, b, modelUsed: 'twoPoints', refIssue };
+    }
+
+    if (validA || validB) {
+      const page = validA ? pageA : pageB;
+      const sec = validA ? secA : secB;
+      if (page <= 0 || page >= totalPages) {
+        return { a: totalSeconds / totalPages, b: 0, modelUsed: 'linear', refIssue };
+      }
+      const frac = page / totalPages;
+      let offset = (sec - frac * totalSeconds) / (1 - frac);
+      if (!isFinite(offset) || offset < 0) offset = 0;
+      if (offset > totalSeconds) offset = 0;
+      const a = (totalSeconds - offset) / totalPages;
+      const b = offset;
+      return { a, b, modelUsed: 'onePoint', refIssue };
+    }
+
+    return { a: totalPages > 0 ? totalSeconds / totalPages : 0, b: 0, modelUsed: 'linear', refIssue };
+  }
+
+  function recalc() {
+    const totalPages = parseInt(totalPagesInput.value) || 1;
+    const totalSeconds = totalAudioSeconds();
+
+    const badDuration = [mInput, sInput, refMAInput, refSAInput, refMBInput, refSBInput, cmInput, csInput]
+      .some(el => { const v = parseInt(el.value); return v > 59 || v < 0; });
+    warnDuration.textContent = t('warnDuration');
+    warnDuration.classList.toggle('show', badDuration);
+
+    const model = getModel(totalPages, totalSeconds);
+
+    if (model.refIssue === 'range') {
+      warnRef.textContent = t('warnRefPage');
+      warnRef.classList.add('show');
+    } else if (model.refIssue === 'samePage') {
+      warnRef.textContent = t('warnRefSamePage');
+      warnRef.classList.add('show');
+    } else {
+      warnRef.classList.remove('show');
+    }
+
+    const modelName = model.modelUsed === 'twoPoints' ? t('modelTwoPoints')
+                     : model.modelUsed === 'onePoint' ? t('modelOnePoint')
+                     : t('modelLinear');
+
+    const totH = Math.floor(totalSeconds / 3600);
+    const totM = Math.floor((totalSeconds % 3600) / 60);
+    const totS = totalSeconds % 60;
+    totalLine.textContent =
+      `${t('totalLinePrefix')}: ${totH}h ${pad(totM)}m ${pad(totS)}s — ${t('bookWord')}: ${totalPages} ${t('pagesWord')} — ${t('modelLabel')}: ${modelName}`;
+
+    const rawPage = parseInt(pageInput.value) || 0;
+    warnCurrentPage.textContent = t('warnCurrentPage');
+    warnCurrentPage.classList.toggle('show', rawPage > totalPages);
+    const page = Math.min(Math.max(rawPage, 0), totalPages);
+    let targetSeconds = Math.round(model.a * page + model.b);
+    targetSeconds = Math.min(Math.max(targetSeconds, 0), totalSeconds || targetSeconds);
+    const h = Math.floor(targetSeconds / 3600);
+    const m = Math.floor((targetSeconds % 3600) / 60);
+    const s = targetSeconds % 60;
+    outH.textContent = pad(h); outM.textContent = pad(m); outS.textContent = pad(s);
+
+    const rawCurrentSeconds = toSeconds(chInput.value, cmInput.value, csInput.value);
+    warnCurrentTime.textContent = t('warnCurrentTime');
+    warnCurrentTime.classList.toggle('show', rawCurrentSeconds > totalSeconds && totalSeconds > 0);
+    const currentSeconds = Math.min(rawCurrentSeconds, totalSeconds || rawCurrentSeconds);
+    let targetPage = model.a !== 0 ? Math.round((currentSeconds - model.b) / model.a) : 0;
+    targetPage = Math.min(Math.max(targetPage, 0), totalPages);
+    outPage.textContent = targetPage;
+    outPageOfText.textContent = `${t('of')} ${totalPages}`;
+  }
+
+  [totalPagesInput, hInput, mInput, sInput, pageInput, chInput, cmInput, csInput,
+   refPageAInput, refHAInput, refMAInput, refSAInput, refPageBInput, refHBInput, refMBInput, refSBInput]
+    .forEach(el => { el.addEventListener('input', () => { recalc(); profileFromFields(); }); });
+  bookTitleInput.addEventListener('input', profileFromFields);
+
+  // ---------- Init ----------
+  applyTheme();
+  fieldsFromProfile(getActiveProfile());
+  populateProfileSelect();
+  updateDeleteButtonState();
+  if (state.lastTab === 'a2p') {
+    document.querySelector('.tab[data-tab="a2p"]').classList.add('active');
+    document.querySelector('.tab[data-tab="p2a"]').classList.remove('active');
+    document.getElementById('panel-a2p').classList.add('active', 'show');
+    document.getElementById('panel-p2a').classList.remove('active');
+  } else {
+    document.getElementById('panel-p2a').classList.add('show');
+  }
+  applyLang();
+
+  // ---------- Splash screen: stays until tapped ----------
+  const splash = document.getElementById('splash');
+  const splashTapHint = document.getElementById('splashTapHint');
+  setTimeout(() => splashTapHint.classList.add('visible'), 550);
+
+  function dismissSplash() {
+    splash.classList.add('tapped');
+    setTimeout(() => {
+      splash.classList.add('fade-out');
+      setTimeout(() => { splash.style.display = 'none'; }, 500);
+    }, 120);
+  }
+  splash.addEventListener('click', dismissSplash);
+  splash.addEventListener('touchend', function (e) { e.preventDefault(); dismissSplash(); }, { passive: false });
+})();
+</script>
+
+</body>
+</html>
